@@ -1,0 +1,72 @@
+@import 'tailwindcss';
+
+/* Design tokens tema Bingkis. Ganti di sini untuk mengubah warna dan font. */
+@theme {
+  --color-ink: #222222;
+  --color-ink-2: #444444;
+  --color-muted: #595959;
+  --color-faint: #767676;
+  --color-line: #eaeaea;
+  --color-soft: #f4f4f2;
+  --color-brand: #1f3a2e;
+  --color-brand-2: #2f4a3a;
+  --color-brand-line: #3d5a4c;
+  --color-brand-muted: #c9d6cf;
+  --color-sale: #9b2c2c;
+  --color-star: #b8862b;
+
+  --font-sans: var(--font-jost), ui-sans-serif, system-ui, sans-serif;
+
+  --animate-marquee: marquee 35s linear infinite;
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+}
+
+@layer base {
+  html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+  body { @apply bg-white text-ink font-sans antialiased; font-size: 16px; line-height: 1.6; }
+  ::selection { background: var(--color-brand); color: #fff; }
+  :focus-visible { outline: 2px solid var(--color-brand); outline-offset: 3px; }
+  summary::-webkit-details-marker { display: none; }
+}
+
+@utility container-page {
+  width: 100%;
+  max-width: 85rem;
+  margin-inline: auto;
+  padding-inline: clamp(1rem, 4vw, 2.5rem);
+}
+
+@utility section-title {
+  font-size: clamp(1.375rem, 2vw, 1.625rem);
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+@utility kicker {
+  font-size: 0.8125rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+
+@utility btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 3.125rem;
+  padding-inline: 2.125rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  transition: background-color 150ms, color 150ms, border-color 150ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .animate-marquee { animation: none; }
+}
