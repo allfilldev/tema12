@@ -3,6 +3,7 @@ import localFont from 'next/font/local';
 import { CartDrawer } from '@/components/CartDrawer';
 import { CartProvider } from '@/components/CartProvider';
 import { Footer } from '@/components/Footer';
+import { ShowcaseCTA } from '@/components/ShowcaseCTA';
 import { Header } from '@/components/Header';
 import { site } from '@/content/site';
 import './globals.css';
@@ -44,6 +45,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <Header />
           <main id="konten">{children}</main>
           <Footer />
+          <ShowcaseCTA />
           <CartDrawer />
         </CartProvider>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }} />

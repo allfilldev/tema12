@@ -70,3 +70,20 @@
   html { scroll-behavior: auto; }
   .animate-marquee { animation: none; }
 }
+
+/* CTA showcase All Fill Dev (sama dengan allfilldev.com) */
+@keyframes wa-ring {
+  0% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  70%,
+  100% {
+    transform: scale(1.25, 1.6);
+    opacity: 0;
+  }
+}
+
+.wa-ring {
+  animation: wa-ring 1.8s ease-out infinite;
+}
