@@ -1,9 +1,10 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { Suspense, useEffect, useState } from 'react';
-import { nav, site } from '@/content/site';
+import { Suspense, useEffect, useId, useRef, useState } from 'react';
+import { desktopNav, nav, site, type NavLink, type NavMenu } from '@/content/site';
 import { cn, WA_CONTACT_URL } from '@/lib/utils';
 import { useCart } from './CartProvider';
 import { Icon } from './Icon';
@@ -18,7 +19,7 @@ function AnnouncementBar() {
   }, [list.length]);
   return (
     <div className="bg-brand text-white">
-      <div className="container-page flex min-h-10 items-center justify-center gap-2 text-center text-[13px] tracking-[0.06em] uppercase">
+      <div className="container-page flex min-h-9 items-center justify-center gap-2 text-center text-xs tracking-[0.08em] uppercase">
         <button type="button" aria-label="Info sebelumnya" onClick={() => setI((v) => (v - 1 + list.length) % list.length)} className="hidden size-9 shrink-0 items-center justify-center sm:inline-flex">
           <Icon name="left" size={14} stroke={2} />
         </button>
@@ -31,13 +32,17 @@ function AnnouncementBar() {
   );
 }
 
+const isMenu = (item: NavLink | NavMenu): item is NavMenu => 'groups' in item;
+
+const desktopLinks: NavLink[] = desktopNav.flatMap((item) => (isMenu(item) ? item.groups.flatMap((g) => g.items) : [item]));
+
 /** Cari item menu yang paling cocok dengan URL sekarang (path + query). Halaman produk dianggap bagian dari Hampers Lebaran. */
-function useActiveHref() {
+function useActiveHref(list: NavLink[]) {
   const pathname = usePathname();
   const params = useSearchParams();
   const path = pathname.startsWith('/produk/') ? '/koleksi' : pathname;
   let best: { href: string; score: number } | null = null;
-  for (const n of nav) {
+  for (const n of list) {
     const url = new URL(n.href, 'http://x');
     if (url.pathname !== path) continue;
     const entries = [...url.searchParams.entries()];
@@ -47,27 +52,108 @@ function useActiveHref() {
   return best?.href ?? null;
 }
 
-function NavLinks({ variant }: { variant: 'desktop' | 'mobile' }) {
-  const active = useActiveHref();
-  return <NavList variant={variant} active={active} />;
+const linkClass = (on: boolean) =>
+  cn('inline-flex items-center gap-1.5 border-b py-1.5 transition-colors hover:text-sale', on ? 'border-sale text-sale' : 'border-transparent text-ink');
+
+function GiftMenu({ menu, active }: { menu: NavMenu; active: string | null }) {
+  const [open, setOpen] = useState(false);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const panelId = useId();
+  const pathname = usePathname();
+  const on = menu.groups.some((g) => g.items.some((i) => i.href === active));
+
+  useEffect(() => setOpen(false), [pathname]);
+
+  const show = () => {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    setOpen(true);
+  };
+  const hide = () => {
+    closeTimer.current = setTimeout(() => setOpen(false), 120);
+  };
+
+  return (
+    <li
+      onMouseEnter={show}
+      onMouseLeave={hide}
+      onBlur={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setOpen(false);
+      }}
+      onKeyDown={(e) => {
+        if (e.key === 'Escape' && open) {
+          setOpen(false);
+          buttonRef.current?.focus();
+        }
+      }}
+    >
+      <button
+        ref={buttonRef}
+        type="button"
+        aria-expanded={open}
+        aria-controls={panelId}
+        onClick={() => setOpen((v) => !v)}
+        className={cn(linkClass(on), 'tracking-[inherit] uppercase', open && !on && 'border-ink')}
+      >
+        {menu.label}
+        <Icon name="down" size={12} stroke={2.2} className={cn('transition-transform', open && 'rotate-180')} />
+      </button>
+      <div id={panelId} hidden={!open} className="absolute inset-x-0 top-full border-t border-line bg-white shadow-[0_12px_24px_rgba(0,0,0,0.08)]">
+        <div className="container-page grid grid-cols-[repeat(3,minmax(0,1fr))_1.3fr] gap-10 py-8 normal-case tracking-normal">
+          {menu.groups.map((g) => (
+            <div key={g.title}>
+              <p className="mb-3 text-xs font-semibold tracking-[0.14em] text-brand uppercase">{g.title}</p>
+              <ul className="space-y-1.5 text-[15px] font-normal">
+                {g.items.map((i) => (
+                  <li key={i.href}>
+                    <Link href={i.href} onClick={() => setOpen(false)} aria-current={i.href === active ? 'page' : undefined} className={cn('hover:text-sale', i.href === active ? 'text-sale' : 'text-ink')}>
+                      {i.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+          <Link href={menu.feature.href} onClick={() => setOpen(false)} className="group relative block h-40 overflow-hidden text-white">
+            <Image src={menu.feature.image} alt="" fill sizes="360px" className="object-cover transition-transform duration-500 group-hover:scale-105" />
+            <span className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent to-60%" />
+            <span className="absolute bottom-3.5 left-4 text-[13px] font-semibold tracking-[0.1em] uppercase">{menu.feature.label}</span>
+          </Link>
+        </div>
+      </div>
+    </li>
+  );
 }
 
-function NavList({ variant, active }: { variant: 'desktop' | 'mobile'; active: string | null }) {
-  if (variant === 'desktop')
-    return (
-      <ul className="flex flex-wrap justify-center gap-x-8 py-3 text-sm font-medium tracking-[0.08em] uppercase">
-        {nav.map((n) => {
-          const on = n.href === active;
-          return (
-            <li key={n.label}>
-              <Link href={n.href} aria-current={on ? 'page' : undefined} className={cn('inline-block border-b py-1.5 transition-colors hover:text-sale', on ? 'border-sale text-sale' : 'border-transparent text-ink')}>
-                {n.label}
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
-    );
+function DesktopNavList({ active }: { active: string | null }) {
+  return (
+    <ul className="flex items-center gap-x-8 text-[13px] font-medium tracking-[0.08em] whitespace-nowrap uppercase">
+      {desktopNav.map((item) =>
+        isMenu(item) ? (
+          <GiftMenu key={item.label} menu={item} active={active} />
+        ) : (
+          <li key={item.label}>
+            <Link href={item.href} aria-current={item.href === active ? 'page' : undefined} className={linkClass(item.href === active)}>
+              {item.label}
+            </Link>
+          </li>
+        ),
+      )}
+    </ul>
+  );
+}
+
+function DesktopNav() {
+  const active = useActiveHref(desktopLinks);
+  return <DesktopNavList active={active} />;
+}
+
+function MobileNav() {
+  const active = useActiveHref(nav);
+  return <MobileNavList active={active} />;
+}
+
+function MobileNavList({ active }: { active: string | null }) {
   return (
     <ul className="flex-1 overflow-y-auto px-4 py-2">
       {nav.map((n) => {
@@ -99,37 +185,31 @@ export function Header() {
     <>
       <AnnouncementBar />
       <header className="sticky top-0 z-40 border-b border-line bg-white/95 backdrop-blur">
-        <div className="container-page">
-          <div className="grid grid-cols-[auto_1fr_auto] items-center py-3 lg:grid-cols-3 lg:pt-5 lg:pb-0">
-            <div className="flex items-center">
-              <button type="button" aria-label="Buka menu" aria-expanded={menuOpen} onClick={() => setMenuOpen(true)} className="inline-flex size-11 items-center justify-center lg:hidden">
-                <Icon name="menu" size={22} />
-              </button>
-              <form action="/koleksi" role="search" className="hidden h-11 w-64 items-center gap-2 border border-[#d4d4d0] bg-soft px-3 transition-colors focus-within:border-ink focus-within:bg-white lg:flex">
-                <label htmlFor="cari" className="sr-only">Cari hampers</label>
-                <Icon name="search" size={18} className="shrink-0 text-muted" />
-                <input id="cari" name="q" type="search" placeholder="Cari hampers" className="h-full min-w-0 flex-1 bg-transparent text-sm placeholder:text-muted focus:outline-none" />
-              </form>
-            </div>
-            <Logo priority className="h-11 justify-self-center sm:h-14" />
-            <div className="flex items-center justify-self-end">
-              <Link href="/koleksi" aria-label="Cari hampers" className="inline-flex size-11 items-center justify-center lg:hidden">
-                <Icon name="search" />
-              </Link>
-              <a href={WA_CONTACT_URL} aria-label="Hubungi via WhatsApp" className="hidden size-11 items-center justify-center lg:inline-flex">
-                <Icon name="whatsapp" />
-              </a>
-              <button type="button" onClick={() => setDrawerOpen(true)} aria-label={`${ready ? count : 0} item di keranjang`} className="relative inline-flex size-11 items-center justify-center">
-                <Icon name="bag" />
-                <span className="absolute top-1 right-0.5 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-brand px-1 text-[11px] text-white">{ready ? count : 0}</span>
-              </button>
-            </div>
+        <div className="container-page grid grid-cols-[1fr_auto_1fr] items-center py-3 lg:flex lg:h-18 lg:gap-10 lg:py-0">
+          <div className="flex items-center lg:hidden">
+            <button type="button" aria-label="Buka menu" aria-expanded={menuOpen} onClick={() => setMenuOpen(true)} className="inline-flex size-11 items-center justify-center">
+              <Icon name="menu" size={22} />
+            </button>
           </div>
-          <nav aria-label="Navigasi utama" className="hidden lg:block">
-            <Suspense fallback={<NavList variant="desktop" active={null} />}>
-              <NavLinks variant="desktop" />
+          <Logo priority className="h-11 justify-self-center sm:h-14 lg:h-11" />
+          <nav aria-label="Navigasi utama" className="hidden flex-1 lg:block">
+            <Suspense fallback={<DesktopNavList active={null} />}>
+              <DesktopNav />
             </Suspense>
           </nav>
+          <div className="flex items-center justify-self-end">
+            <Link href="/koleksi" aria-label="Cari hampers" className="inline-flex size-11 items-center justify-center lg:hidden">
+              <Icon name="search" />
+            </Link>
+            <a href={WA_CONTACT_URL} className="mr-2 hidden h-10 items-center gap-2 border border-ink px-3.5 text-xs font-medium tracking-[0.08em] uppercase transition-colors hover:bg-ink hover:text-white lg:inline-flex">
+              <Icon name="whatsapp" size={16} className="text-[#25D366]" />
+              Chat Admin
+            </a>
+            <button type="button" onClick={() => setDrawerOpen(true)} aria-label={`${ready ? count : 0} item di keranjang`} className="relative inline-flex size-11 items-center justify-center">
+              <Icon name="bag" />
+              <span className="absolute top-1 right-0.5 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-brand px-1 text-[11px] text-white">{ready ? count : 0}</span>
+            </button>
+          </div>
         </div>
       </header>
 
@@ -150,8 +230,8 @@ export function Header() {
                 <input id="cari-m" name="q" type="search" placeholder="Cari hampers" className="h-full min-w-0 flex-1 bg-transparent text-base focus:outline-none" />
               </form>
             </div>
-            <Suspense fallback={<NavList variant="mobile" active={null} />}>
-              <NavLinks variant="mobile" />
+            <Suspense fallback={<MobileNavList active={null} />}>
+              <MobileNav />
             </Suspense>
             <div className="border-t border-line p-4 text-sm text-muted">
               <p>{site.contact.whatsappDisplay}</p>

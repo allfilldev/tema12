@@ -58,6 +58,34 @@ export const budgets = [
   { id: '1000+', label: 'Di atas 1jt', min: 1_000_000, max: Infinity },
 ];
 
+export type NavLink = { label: string; href: string };
+export type NavMenu = {
+  label: string;
+  groups: { title: string; items: NavLink[] }[];
+  feature: NavLink & { image: string };
+};
+
+const koleksiHref = (key: string, value: string) => `/koleksi?${new URLSearchParams({ [key]: value })}`;
+
+/** Menu desktop (satu baris + dropdown). Menu mobile tetap memakai `nav`. */
+export const desktopNav: (NavLink | NavMenu)[] = [
+  { label: 'Hampers Lebaran', href: '/koleksi' },
+  {
+    label: 'Pilih Hadiah',
+    groups: [
+      { title: 'Per Penerima', items: recipients.map((r) => ({ label: r.label, href: koleksiHref('penerima', r.id) })) },
+      { title: 'Per Budget', items: budgets.map((b) => ({ label: b.label, href: koleksiHref('budget', b.id) })) },
+      {
+        title: 'Kategori',
+        items: categories.filter((c) => c.id !== 'corporate').map((c) => ({ label: c.label, href: koleksiHref('kategori', c.id) })),
+      },
+    ],
+    feature: { label: 'Lihat semua hampers', href: '/koleksi', image: '/images/hero-1.webp' },
+  },
+  { label: 'Corporate', href: '/corporate' },
+  { label: 'Cara Pesan', href: '/cara-pesan' },
+];
+
 export const homeSelections = [
   { label: 'Orang Tua', href: '/koleksi?penerima=orang-tua', image: '/images/kategori-orang-tua.webp' },
   { label: 'Atasan', href: '/koleksi?penerima=atasan', image: '/images/kategori-atasan.webp' },
