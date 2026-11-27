@@ -2,6 +2,10 @@
 
 /* Design tokens tema Bingkis. Ganti di sini untuk mengubah warna dan font. */
 @theme {
+  /* Warna logo All Fill Dev, disesuaikan dengan tema. */
+  --color-logo: #1f3a2e;
+  --color-logo-light: #ffffff;
+
   --color-ink: #222222;
   --color-ink-2: #444444;
   --color-muted: #595959;
@@ -86,4 +90,14 @@
 
 .wa-ring {
   animation: wa-ring 1.8s ease-out infinite;
+}
+
+/* Logo All Fill Dev satu warna: bentuk dari PNG (mask), warna dari token --color-logo. */
+.afd-logo-mark {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background-color: currentColor;
+  -webkit-mask: url('/brand/allfilldev-logo.png') center / contain no-repeat;
+  mask: url('/brand/allfilldev-logo.png') center / contain no-repeat;
 }

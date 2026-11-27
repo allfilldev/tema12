@@ -24,6 +24,7 @@ pnpm build    # cek build production
 Semua konten ada di `src/content/`:
 - `site.ts`: kontak, pengumuman, batch PO (`batches`, `poDeadline`), banner, FAQ, testimoni, logo klien, harga corporate
 - `products.ts`: daftar produk, varian harga, batch yang penuh (`soldOutBatches`), badge
+- Logo All Fill Dev: satu warna, ganti warnanya lewat token `--color-logo` (dan `--color-logo-light` untuk latar gelap) di `src/app/globals.css`
 - Warna dan font: `src/app/globals.css` (blok `@theme`)
 
 Keranjang disimpan di localStorage browser.
